@@ -5,9 +5,8 @@ using System.Threading.Tasks;
 
 namespace VotingIrregularities.Api.Models
 {
-    public class ModelOptiuniSelectate
+    public class ModelVersiune
     {
-        public int IdOptiune { get; set; }
-        public string Value { get; set; }
+        public Dictionary<string,int> Versiune { get; set; }
     }
 }

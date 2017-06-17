@@ -1,43 +1,75 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using AutoMapper;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using VotingIrregularities.Api.Extensions;
 using VotingIrregularities.Api.Models;
+using VotingIrregularities.Domain.SectieAggregate;
 
 namespace VotingIrregularities.Api.Controllers
 {
     [Route("api/v1/sectie")]
     public class Sectie : Controller
     {
+        private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
+
+        public Sectie(IMediator mediator, IMapper mapper)
+        {
+            _mapper = mapper;
+            _mediator = mediator;
+        }
 
         /// <summary>
-        /// Aceasta ruta permite observatorului sa caute o lista de sectii dupa judet si numarul de sectie
+        /// Se apeleaza aceast metoda cand observatorul salveaza informatiile legate de ora sosirii. ora plecarii, zona urbana, info despre presedintele BESV.
+        /// Aceste informatii sunt insotite de id-ul sectiei de votare.
         /// </summary>
-        /// <param name="idJudet">Observatorul va trebui sa aleaga dintr-un selectlist un id de judet (de la 1 la 40 si 41 pentru diaspora)</param>
-        /// <param name="numarSectie">Se poate trece doar partial numarul sectiei</param>
+        /// <param name="dateSectie">Informatii despre sectia de votare si observatorul alocat ei</param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<List<ModelSectie>> Cauta(int? idJudet, int? numarSectie)
+        [HttpPost()]
+        public async Task<IAsyncResult> Inregistreaza([FromBody] ModelDateSectie dateSectie)
         {
-            return await Task.Run(() => new List<ModelSectie>
-            {
-                new ModelSectie
-                {
-                    AdresaSectie = "Seminarul Teologic Ortodox „Sfântul Simion Ştefan“, Bld. Transilvaniei (Bld. Transilvania) , Nr. 36A",
-                    IdSectieDeVotare = 23,
-                    Oras = "ALBA IULIA",
-                    Judet = "ALBA"
-                },
+            if (!ModelState.IsValid)
+                return this.ResultAsync(HttpStatusCode.BadRequest, ModelState);
 
-                new ModelSectie
-                {
-                    AdresaSectie = "Grădiniţa cu program normal 'Scufiţa Roşie', Str. Pricazului , Nr. 48",
-                    IdSectieDeVotare = 1043,
-                    Oras = "ORĂŞTIE",
-                    Judet = "HUNEDOARA"
-                }
-            });
+            var command = _mapper.Map<InregistreazaSectieCommand>(dateSectie);
+
+            // TODO[DH] get the actual IdObservator from token
+            command.IdObservator = int.Parse(User.Claims.First(c => c.Type == "IdObservator").Value);
+
+            var result = await _mediator.Send(command);
+
+            return this.ResultAsync(result < 0 ? HttpStatusCode.NotFound : HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Se apeleaza aceasta metoda cand se actualizeaza informatiile legate de ora plecarii.
+        /// Aceste informatii sunt insotite de id-ul sectiei de votare.
+        /// </summary>
+        /// <param name="dateSectie">Numar sectie de votare, cod judet, ora plecarii</param>
+        /// <returns></returns>
+        [HttpPut]
+        public async Task<IAsyncResult> Actualizeaza([FromBody] ModelActualizareDateSectie dateSectie)
+        {
+            if (!ModelState.IsValid)
+                return this.ResultAsync(HttpStatusCode.BadRequest, ModelState);
+
+            int idSectie = await _mediator.Send(_mapper.Map<ModelSectieQuery>(dateSectie));
+            if (idSectie < 0)
+                return this.ResultAsync(HttpStatusCode.NotFound);
+
+            var command = _mapper.Map<ActualizeazaSectieCommand>(dateSectie);
+
+            // TODO get the actual IdObservator from token
+            command.IdObservator = int.Parse(User.Claims.First(c => c.Type == "IdObservator").Value);
+            command.IdSectieDeVotare = idSectie;
+
+            var result = await _mediator.Send(command);
+
+            return this.ResultAsync(result < 0 ? HttpStatusCode.NotFound : HttpStatusCode.OK);
         }
     }
 }

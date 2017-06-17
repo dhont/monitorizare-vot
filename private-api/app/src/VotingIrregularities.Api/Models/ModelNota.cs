@@ -1,15 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using AutoMapper;
+using System.ComponentModel.DataAnnotations;
+using VotingIrregularities.Domain.NotaAggregate;
 
 namespace VotingIrregularities.Api.Models
 {
     public class ModelNota
     {
-        public string CodFormular { get; set; }
-        public int IdIntrebare { get; set; }
+        [Required(AllowEmptyStrings = false)]
+        public string CodJudet { get; set; }
+        [Required]
+        public int NumarSectie { get; set; }
+        public int? IdIntrebare { get; set; }
         public string TextNota { get; set; }
+    }
 
+    public class ModelNotaProfile : Profile
+    {
+        public ModelNotaProfile()
+        {
+            CreateMap<ModelNota, ModelSectieQuery>();
+            CreateMap<ModelNota, AdaugaNotaCommand>();
+        }
     }
 }

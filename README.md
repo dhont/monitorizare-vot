@@ -1,5 +1,6 @@
 # Monitorizare Vot
 
+
 Este o aplicație destinată observatorilor electorali, și implicit ONG-urilor care îi acredirează, care vor supraveghea alegerile parlamentare din 2016.Ei vor avea astfel un instrument rapid de raportare in timp real a situatiilor din sectiile de votare, inclusiv a neregulilor, atunci cand apar. Aplicația va putea fi utilizată pentru orice tip de alegeri din România și nu numai.
 
 Aplicația va permite observatorilor și ONG-urilor:
